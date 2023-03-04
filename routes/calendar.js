@@ -3,10 +3,39 @@ const db = require('../connection/clientConnection');
 const router = express.Router();
 const CollectionName = "calendar";
 
-router.post('/create',async (req, res) => {
+router.post('/update', async (req, res) => {
 
     const database = await db();
     const returnData = {};
+    try {
+        const result = await database.collection(CollectionName).updateOne(
+            { gridId: req.body.gridId, "reminders.id": req.body.reminder.id },
+            {
+                $set: {
+                    "reminders.$": req.body.reminder
+                }
+            }
+        );
+        if (result.acknowledged) {
+            returnData.code = "200";
+            returnData.message = "Success";
+            returnData.data = result.insertedId;
+            res.send(returnData);
+        }
+    } catch (error) {
+        returnData.code = "500";
+        if (custom_msg == false) {
+            returnData.message = "Something Went Wrong";
+        }
+        returnData.data = {};
+        res.send(returnData);
+    }
+});
+
+router.post('/create', async (req, res) => {
+    const database = await db();
+    const returnData = {};
+
     try {
         const result = await database.collection(CollectionName).updateOne(
             { date: req.body.date },
@@ -38,7 +67,7 @@ router.post('/create',async (req, res) => {
         returnData.data = {};
         res.send(returnData);
     }
-});
+})
 
 router.get('/getData', async (req, res) => {
     const database = await db();
@@ -50,7 +79,7 @@ router.get('/getData', async (req, res) => {
     database.collection(CollectionName).find(query).toArray().then((result) => {
         returnData.code = "200";
         returnData.message = "Success";
-        returnData.data = result ? result[0] : [];
+        returnData.data = result ? result : [];
         res.send(returnData);
     }).catch(error => {
         returnData.code = "500";
